@@ -1,0 +1,22 @@
+controller:
+  admin:
+    username: diego
+    password: "diego"
+
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hostName: jenkins.casa
+
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "2"
+      memory: "2Gi"
+
+  numExecutors: 1
+
+persistence:
+  enabled: true
