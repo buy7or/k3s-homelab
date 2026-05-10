@@ -70,7 +70,7 @@ spec:
     spec:
       containers:
         - name: web-demo
-          image: python:3.12-slim
+          image: python:3.12-alpine
           command: ["/bin/sh", "-c"]
           args:
             - pip install flask redis && python /app/app.py
