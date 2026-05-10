@@ -69,7 +69,7 @@ def index():
     </head>
     <body>
       <div class="card">
-        <h1>🚀 Web en Kubernetes</h1>
+        <h1>🚀 Web en Kubernetes - Cambio</h1>
         <p>Una sola réplica de la web.</p>
         <p>El contador se guarda en Redis.</p>
         <div class="count">{count}</div>
