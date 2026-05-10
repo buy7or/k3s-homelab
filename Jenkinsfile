@@ -35,8 +35,9 @@ spec:
         sh '''
           kubectl create configmap web-demo-app \
             --from-file=app.py \
+            -n default \
             --dry-run=client \
-            -o yaml | kubectl apply -f -
+            -o yaml | kubectl apply -n default -f -
         '''
       }
     }
@@ -44,7 +45,7 @@ spec:
     stage('Aplicar Kubernetes YAML') {
       steps {
         sh '''
-          kubectl apply -f web-demo.yaml
+          kubectl apply -n default -f web-demo.yaml
         '''
       }
     }
@@ -52,8 +53,8 @@ spec:
     stage('Reiniciar web-demo') {
       steps {
         sh '''
-          kubectl rollout restart deployment web-demo
-          kubectl rollout status deployment web-demo
+          kubectl rollout restart deployment web-demo -n default
+          kubectl rollout status deployment web-demo -n default
         '''
       }
     }
@@ -61,10 +62,10 @@ spec:
     stage('Estado final') {
       steps {
         sh '''
-          kubectl get pods -o wide
-          kubectl get svc
-          kubectl get ingress
-          kubectl get pvc
+          kubectl get pods -n default -o wide
+          kubectl get svc -n default
+          kubectl get ingress -n default
+          kubectl get pvc -n default
         '''
       }
     }
