@@ -68,24 +68,17 @@ spec:
       labels:
         app: web-demo
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: web-demo
-          image: python:3.12-alpine
-          command: ["/bin/sh", "-c"]
-          args:
-            - pip install flask redis && python /app/app.py
+          image: ghcr.io/buy7or/k3s-homelab/web-demo:latest
+          imagePullPolicy: Always
           env:
             - name: REDIS_HOST
               value: redis
           ports:
             - containerPort: 5000
-          volumeMounts:
-            - name: app-code
-              mountPath: /app
-      volumes:
-        - name: app-code
-          configMap:
-            name: web-demo-app
 ---
 apiVersion: v1
 kind: Service
@@ -99,7 +92,6 @@ spec:
   ports:
     - port: 80
       targetPort: 5000
-
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -107,6 +99,7 @@ metadata:
   name: web-demo-ingress
   namespace: default
 spec:
+  ingressClassName: traefik
   rules:
     - host: web-demo.casa
       http:
