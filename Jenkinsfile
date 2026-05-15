@@ -13,8 +13,37 @@ spec:
       command:
         - cat
       tty: true
+      volumeMounts:
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
+
+    - name: kaniko
+      image: gcr.io/kaniko-project/executor:debug
+      command:
+        - /busybox/cat
+      tty: true
+      volumeMounts:
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
+        - name: docker-config
+          mountPath: /kaniko/.docker
+
+  volumes:
+    - name: workspace-volume
+      emptyDir: {}
+    - name: docker-config
+      secret:
+        secretName: ghcr-secret
+        items:
+          - key: .dockerconfigjson
+            path: config.json
 '''
     }
+  }
+
+  environment {
+    IMAGE_NAME = 'ghcr.io/buy7or/k3s-homelab/web-demo'
+    IMAGE_TAG = 'latest'
   }
 
   stages {
@@ -25,48 +54,57 @@ spec:
           ls -la
 
           test -f app.py
+          test -f requirements.txt
+          test -f Dockerfile
           test -f web-demo.yaml
         '''
       }
     }
 
-    stage('Actualizar ConfigMap') {
+    stage('Build y push imagen Docker') {
       steps {
-        sh '''
-          kubectl create configmap web-demo-app \
-            --from-file=app.py \
-            -n default \
-            --dry-run=client \
-            -o yaml | kubectl apply -n default -f -
-        '''
+        container('kaniko') {
+          sh '''
+            /kaniko/executor \
+              --context . \
+              --dockerfile Dockerfile \
+              --destination ${IMAGE_NAME}:${IMAGE_TAG}
+          '''
+        }
       }
     }
 
     stage('Aplicar Kubernetes YAML') {
       steps {
-        sh '''
-          kubectl apply -n default -f web-demo.yaml
-        '''
+        container('kubectl') {
+          sh '''
+            kubectl apply -n default -f web-demo.yaml
+          '''
+        }
       }
     }
 
     stage('Reiniciar web-demo') {
       steps {
-        sh '''
-          kubectl rollout restart deployment web-demo -n default
-          kubectl rollout status deployment web-demo -n default
-        '''
+        container('kubectl') {
+          sh '''
+            kubectl rollout restart deployment web-demo -n default
+            kubectl rollout status deployment web-demo -n default
+          '''
+        }
       }
     }
 
     stage('Estado final') {
       steps {
-        sh '''
-          kubectl get pods -n default -o wide
-          kubectl get svc -n default
-          kubectl get ingress -n default
-          kubectl get pvc -n default
-        '''
+        container('kubectl') {
+          sh '''
+            kubectl get pods -n default -o wide
+            kubectl get svc -n default
+            kubectl get ingress -n default
+            kubectl get pvc -n default
+          '''
+        }
       }
     }
   }
